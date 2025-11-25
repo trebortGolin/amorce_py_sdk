@@ -7,6 +7,7 @@ import os
 import base64
 import json
 import logging
+import hashlib  # MCP 1.0 Requirement
 from abc import ABC, abstractmethod
 from typing import Optional, Union
 
@@ -124,7 +125,6 @@ class IdentityManager:
         """
         Factory method: Generates a new ephemeral Ed25519 identity in memory.
         Returns a self-contained IdentityManager instance ready for consumption.
-        This satisfies the 'Zero Knowledge' QA requirement.
         """
         # Generate a new keypair using cryptography
         new_key = ed25519.Ed25519PrivateKey.generate()
@@ -143,6 +143,17 @@ class IdentityManager:
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
         return pem_bytes.decode("utf-8")
+
+    @property
+    def agent_id(self) -> str:
+        """
+        MCP 1.0: Deterministic Agent ID derivation.
+        Returns the SHA-256 hash of the public key PEM.
+        This ensures the ID is cryptographically bound to the key.
+        """
+        # We strip whitespace to ensure consistent hashing across platforms
+        clean_pem = self.public_key_pem.strip()
+        return hashlib.sha256(clean_pem.encode('utf-8')).hexdigest()
 
     @property
     def private_key_pem(self) -> str:

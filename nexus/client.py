@@ -13,7 +13,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .crypto import IdentityManager
-from .envelope import NexusEnvelope, SenderInfo, SettlementInfo
+from .envelope import NexusEnvelope, SenderInfo, SettlementInfo, PriorityLevel
 
 logger = logging.getLogger("nexus.client")
 
@@ -29,25 +29,26 @@ class NexusClient:
             identity: IdentityManager,
             directory_url: str,
             orchestrator_url: str,
-            agent_id: Optional[str] = None,
+            # MCP 2.0: Removed redundant agent_id argument
             api_key: Optional[str] = None
     ):
         self.identity = identity
         self.directory_url = directory_url.rstrip('/')
         self.orchestrator_url = orchestrator_url.rstrip('/')
-        self.agent_id = agent_id
         self.api_key = api_key
+
+        # MCP 2.1: Read Agent ID directly from the identity derivation
+        self.agent_id = identity.agent_id
 
         # Session for persistent connections
         self.session = requests.Session()
 
-        # --- MISSION BRAVO: Configuration de la Résilience ---
-        # On définit une stratégie de retry robuste pour les réseaux instables.
+        # --- Configuration de la Résilience ---
         retry_strategy = Retry(
             total=3,  # Nombre total de tentatives après le premier échec
             backoff_factor=1,  # Attente: 1s, 2s, 4s...
             status_forcelist=[429, 500, 502, 503, 504],  # Codes à réessayer
-            allowed_methods=["HEAD", "GET", "POST", "PUT", "DELETE"]  # Verbes HTTP autorisés
+            allowed_methods=["HEAD", "GET", "POST", "PUT", "DELETE"]
         )
 
         adapter = HTTPAdapter(max_retries=retry_strategy)
@@ -60,7 +61,7 @@ class NexusClient:
         if self.api_key:
             self.session.headers.update({"X-ATP-Key": self.api_key})
 
-    def _create_envelope(self, payload: Dict[str, Any], priority: str = "normal") -> NexusEnvelope:
+    def _create_envelope(self, payload: Dict[str, Any], priority: str = PriorityLevel.NORMAL) -> NexusEnvelope:
         """Helper to build and sign a standard envelope."""
 
         # 1. Build Sender Info
@@ -95,7 +96,7 @@ class NexusClient:
             logger.error(f"Discovery failed: {e}")
             return []
 
-    def transact(self, service_contract: Dict[str, Any], payload: Dict[str, Any], priority: str = "normal") -> Optional[Dict[str, Any]]:
+    def transact(self, service_contract: Dict[str, Any], payload: Dict[str, Any], priority: str = PriorityLevel.NORMAL) -> Optional[Dict[str, Any]]:
         """
         P-9.3: Execute a transaction via the Orchestrator.
         Wraps the payload in a signed NATP Envelope.

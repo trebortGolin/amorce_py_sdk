@@ -1,7 +1,7 @@
 # Nexus SDK Core
-# Version 0.1.3
+# Version 0.1.6
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 
 # Task 1: Crypto & Identity
 from .crypto import IdentityManager, LocalFileProvider, EnvVarProvider, GoogleSecretManagerProvider

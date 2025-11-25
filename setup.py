@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text() if (this_directory
 
 setup(
     name="nexus-py-sdk",
-    version="0.1.5",  # BUMP: 0.1.4 -> 0.1.5 (Critical DX Overhaul)
+    version="0.1.6",  # BUMP: 0.1.5 -> 0.1.6 (Critical API Fix: Agent ID Derivation)
     description="Official Python SDK for the Nexus Agent Transaction Protocol (NATP)",
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -16,7 +16,6 @@ setup(
     url="https://github.com/trebortGolin/nexus_py_sdk",
     packages=find_packages(),
     python_requires=">=3.9",
-    # CRITICAL FIX: Explicit dependencies as requested by QA
     install_requires=[
         "requests>=2.31.0",
         "cryptography>=41.0.0",
