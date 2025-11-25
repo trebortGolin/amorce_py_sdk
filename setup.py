@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text() if (this_directory
 
 setup(
     name="nexus-py-sdk",
-    version="0.1.3",  # BUMP: 0.1.2 -> 0.1.3 (Critical DX Overhaul)
+    version="0.1.4",  # BUMP: 0.1.3 -> 0.1.4 (Critical DX Overhaul)
     description="Official Python SDK for the Nexus Agent Transaction Protocol (NATP)",
     long_description=long_description,
     long_description_content_type='text/markdown',

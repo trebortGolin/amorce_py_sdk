@@ -100,6 +100,15 @@ class GoogleSecretManagerProvider(IdentityProvider):
             logger.error(f"Failed to load key from Secret Manager: {e}")
             raise
 
+# --- Internal Provider for In-Memory Keys ---
+class InMemoryProvider(IdentityProvider):
+    """Holds a generated key in memory (Ephemeral)."""
+    def __init__(self, private_key: ed25519.Ed25519PrivateKey):
+        self._key = private_key
+
+    def get_private_key(self) -> ed25519.Ed25519PrivateKey:
+        return self._key
+
 
 class IdentityManager:
     """
@@ -110,12 +119,40 @@ class IdentityManager:
         self._private_key = provider.get_private_key()
         self._public_key = self._private_key.public_key()
 
+    @staticmethod
+    def generate() -> 'IdentityManager':
+        """
+        Factory method: Generates a new ephemeral Ed25519 identity in memory.
+        Ideal for testing, QA, and temporary agents.
+        """
+        # Generate a new keypair using cryptography
+        new_key = ed25519.Ed25519PrivateKey.generate()
+
+        # Wrap it in our internal provider
+        provider = InMemoryProvider(new_key)
+
+        # Return a ready-to-use IdentityManager
+        return IdentityManager(provider)
+
     @property
     def public_key_pem(self) -> str:
         """Returns the public key in PEM format (for registration)."""
         pem_bytes = self._public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        return pem_bytes.decode("utf-8")
+
+    @property
+    def private_key_pem(self) -> str:
+        """
+        Returns the private key in PEM format.
+        WARNING: Handle with extreme care. Used for saving generated identities.
+        """
+        pem_bytes = self._private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
         )
         return pem_bytes.decode("utf-8")
 
