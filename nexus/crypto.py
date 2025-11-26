@@ -7,7 +7,7 @@ import os
 import base64
 import json
 import logging
-import hashlib  # MCP 1.0 Requirement
+import hashlib  # Required for MCP 1.0 (Agent ID Derivation)
 from abc import ABC, abstractmethod
 from typing import Optional, Union
 

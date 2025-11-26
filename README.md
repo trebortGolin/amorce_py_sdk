@@ -1,4 +1,4 @@
-```
+
 ```
 # Nexus Python SDK (NATP)
 
@@ -117,19 +117,59 @@ The SDK implements the **NATP v0.1** standard.
 
 ----------
 
-## 🛠️ Development
+## 🛠️ Development & Verification
 
-### Running Tests
+To contribute to the SDK or verify a deployment, follow these steps.
 
-To ensure the SDK works in your environment:
+### 1. Environment Setup
+
+It is strictly recommended to use a Virtual Environment to avoid conflicts.
 
 Bash
 
 ```
-# Install test dependencies
+# Clone the repository
+git clone [https://github.com/trebortGolin/nexus_py_sdk.git](https://github.com/trebortGolin/nexus_py_sdk.git)
+cd nexus_py_sdk
+
+# Create and activate Virtual Environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+
+# Install development dependencies
 pip install -r requirements.txt
 
-# Run the integration test
+```
+
+### 2. Running the QA Suite (Smoke Test)
+
+We provide a specialized QA script to validate core v0.1.6 features (Identity Derivation, Client API, and Envelope Aliases).
+
+**Command:**
+
+Bash
+
+```
+python3 tests/test_smoke.py
+
+```
+
+**Expected Output:** The script checks 3 critical components. You should see:
+
+-   ✅ `[PASS] Agent ID is mathematically correct (SHA-256).`
+    
+-   ✅ `[PASS] NexusClient retrieved Agent ID from identity.`
+    
+-   ✅ `[PASS] Envelope created with alias 'Envelope' and priority 'critical'.`
+    
+
+### 3. Running Integration Tests
+
+To test resilience and network retry logic (requires a local mock server):
+
+Bash
+
+```
 python3 tests/test_resilience_real.py
 
 ```

@@ -104,3 +104,6 @@ class NexusEnvelope(BaseModel):
             canonical_bytes,
             self.signature
         )
+
+# DX ALIAS: Required for legacy imports looking for 'Envelope' directly in this module
+Envelope = NexusEnvelope
