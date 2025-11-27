@@ -1,46 +1,49 @@
-
-```
 # Nexus Python SDK (NATP)
-
-[![PyPI version](https://badge.fury.io/py/nexus-py-sdk.svg)](https://badge.fury.io/py/nexus-py-sdk)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Official Python SDK for the Nexus Agent Transaction Protocol (NATP).**
 
-The Nexus SDK allows any Python application, API, or Agent to become a verified node in the **Agent Economy**. It provides the cryptographic primitives (Ed25519) and the transport layer required to transact securely with AI Agents.
-
----
+The Nexus SDK allows any Python application, API, or Agent to become a verified node in the **Agent Economy**. It provides the cryptographic primitives (Ed25519) and the transport layer required to transact securely with AI Agents (OpenAI, Google Gemini, Apple Intelligence).
 
 ## 🚀 Features
 
-* **Zero-Trust Security**: Every request is cryptographically signed (Ed25519).
-* **Agent Identity**: Manage your agent's identity and keys securely.
-* **Priority Lane**: Mark critical messages (`high`, `critical`) to bypass network congestion.
-* **Resilience**: Automatic retry logic with exponential backoff for unstable networks.
-* **Developer Experience (v0.1.6)**: Simplified identity management and Agent ID auto-derivation.
-
----
+-   **Zero-Trust Security**: Every request is cryptographically signed (Ed25519) locally.
+    
+-   **Agent Identity**: Manage your agent's identity and keys securely without complexity.
+    
+-   **Priority Lane**: Mark critical messages (`high`, `critical`) to bypass network congestion.
+    
+-   **Resilience**: Automatic retry logic with exponential backoff for unstable networks (handles 503, 429).
+    
+-   **Developer Experience (v0.1.6)**: Simplified `IdentityManager` with auto-derived Agent IDs.
+    
 
 ## 📦 Installation
 
-```bash
+### Prerequisites
+
+-   **Python 3.10+**
+    
+-   **OS**: Linux, macOS, or Windows.
+    
+    -   _Linux users:_ Ensure you have `build-essential` and `libssl-dev` installed for the cryptography dependency.
+        
+
+### Install via PyPI
+
+```
 pip install nexus-py-sdk
 
 ```
-
-----------
 
 ## ⚡ Quick Start
 
 ### 1. Identity Setup
 
-An Agent is defined by its Private Key. **Never share this key.**
+An Agent is defined by its **Private Key**. Never share this key.
 
 #### Option A: Quick Start (Ephemeral / Testing)
 
-Generate a new identity in memory instantly. No files required.
-
-Python
+Generate a new identity in memory instantly. Perfect for QA scripts or temporary bots.
 
 ```
 from nexus import IdentityManager
@@ -48,133 +51,113 @@ from nexus import IdentityManager
 # Generates a fresh Ed25519 keypair in memory (Ephemeral)
 identity = IdentityManager.generate_ephemeral()
 
-print(f"Agent Public Key: {identity.public_key_pem}")
-print(f"Agent ID (Derived): {identity.agent_id}")
+# The Agent ID is automatically derived from the Public Key (SHA-256)
+print(f"Agent ID: {identity.agent_id}")
+print(f"Public Key: {identity.public_key_pem}")
 
 ```
 
 #### Option B: Production (Secure Storage)
 
-Load your identity from a secure source.
-
-Python
+Load your identity from a secure source or environment variable.
 
 ```
+import os
 from nexus import IdentityManager, LocalFileProvider
 
 # Load from a local PEM file
 identity = IdentityManager(LocalFileProvider("agent_key.pem"))
 
+# OR (Recommended) Load private key content from Environment Variable
+# identity = IdentityManager.from_env("NEXUS_PRIVATE_KEY")
+
 ```
 
-### 2. Sending a Transaction
+### 2. Sending a Transaction (Full Example)
 
 Use the `NexusClient` to discover services and execute transactions.
 
-Python
-
 ```
+import os
 from nexus import NexusClient, PriorityLevel
 
-# Initialize the client
-# Note: 'agent_id' is now automatically derived from the identity (v0.1.6)
+# Configuration (Use Env Vars in Prod!)
+DIRECTORY_URL = os.getenv("NEXUS_DIRECTORY_URL", "[https://directory.amorce.io](https://directory.amorce.io)")
+ORCHESTRATOR_URL = os.getenv("NEXUS_ORCHESTRATOR_URL", "[https://api.amorce.io](https://api.amorce.io)")
+
+# 1. Initialize the client
+# Note: 'agent_id' is automatically derived from the identity object.
 client = NexusClient(
     identity=identity,
-    directory_url="[https://directory.amorce.io](https://directory.amorce.io)",
-    orchestrator_url="[https://api.amorce.io](https://api.amorce.io)"
+    directory_url=DIRECTORY_URL,
+    orchestrator_url=ORCHESTRATOR_URL
 )
 
-# Define the payload
+# 2. Define the payload (The "Letter" inside the Envelope)
 payload = {
     "intent": "book_reservation",
     "params": {"date": "2025-10-12", "guests": 2}
 }
 
-# Execute with PRIORITY
+# 3. Execute with PRIORITY
 # Options: PriorityLevel.NORMAL, .HIGH, .CRITICAL
-response = client.transact(
-    service_contract={"service_id": "srv_restaurant_01"},
-    payload=payload,
-    priority=PriorityLevel.HIGH 
-)
+print(f"Sending transaction from {identity.agent_id}...")
 
-print(response)
+try:
+    response = client.transact(
+        service_contract={"service_id": "srv_restaurant_01"},
+        payload=payload,
+        priority=PriorityLevel.HIGH 
+    )
+    
+    if response.get("status") == "success":
+        print(f"✅ Success! Tx ID: {response.get('transaction_id')}")
+        print(f"Data: {response.get('data')}")
+    else:
+        print(f"⚠️ Server Error: {response}")
+
+except Exception as e:
+    print(f"❌ Network or Protocol Error: {str(e)}")
 
 ```
 
-----------
+## 🛡️ Architecture & Security
 
-## 🛡️ Architecture
+The SDK implements the **NATP v0.1** standard strictly.
 
-The SDK implements the **NATP v0.1** standard.
-
-1.  **Envelope**: Data is wrapped in a `NexusEnvelope`, serialized canonically, and signed.
+1.  **Envelope**: Data is wrapped in a `NexusEnvelope`.
     
-2.  **Transport**: The envelope is sent via HTTP/2 to the Orchestrator with automatic retries.
+2.  **Canonicalization**: JSON payloads are serialized canonically (RFC 8785) to ensure signature consistency.
     
-3.  **Verification**: The receiver verifies the signature against the Trust Directory before processing.
+3.  **Signing**: The envelope is signed locally using Ed25519.
+    
+4.  **Transport**: The envelope is sent via HTTP/2 to the Orchestrator.
+    
+5.  **Verification**: The receiver verifies the signature against the Trust Directory before processing.
     
 
-----------
+## 🔧 Troubleshooting & FAQ
 
-## 🛠️ Development & Verification
+**Q: I get a `401 Unauthorized` when registering.** A: Ensure your signature logic is correct. If you use `IdentityManager`, the signature is handled automatically. If you are manually constructing payloads, verify you are signing the **canonical** JSON string encoded in UTF-8.
 
-To contribute to the SDK or verify a deployment, follow these steps.
+**Q: I get `SSL: CERTIFICATE_VERIFY_FAILED`.** A: This happens if you use a placeholder URL or a self-signed cert in dev. Ensure `ORCHESTRATOR_URL` points to a valid HTTPS endpoint with a trusted certificate.
 
-### 1. Environment Setup
+**Q: How do I get my Agent ID?** A: Do not hardcode it. Access it via `identity.agent_id`. It is the SHA-256 hash of your public key.
 
-It is strictly recommended to use a Virtual Environment to avoid conflicts.
+## 🛠️ Development
 
-Bash
+To contribute to the SDK:
 
 ```
-# Clone the repository
+# Clone and install in editable mode
 git clone [https://github.com/trebortGolin/nexus_py_sdk.git](https://github.com/trebortGolin/nexus_py_sdk.git)
 cd nexus_py_sdk
+pip install -e .
 
-# Create and activate Virtual Environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-
-# Install development dependencies
-pip install -r requirements.txt
+# Run Unit Tests
+python3 -m unittest discover tests
 
 ```
-
-### 2. Running the QA Suite (Smoke Test)
-
-We provide a specialized QA script to validate core v0.1.6 features (Identity Derivation, Client API, and Envelope Aliases).
-
-**Command:**
-
-Bash
-
-```
-python3 tests/test_smoke.py
-
-```
-
-**Expected Output:** The script checks 3 critical components. You should see:
-
--   ✅ `[PASS] Agent ID is mathematically correct (SHA-256).`
-    
--   ✅ `[PASS] NexusClient retrieved Agent ID from identity.`
-    
--   ✅ `[PASS] Envelope created with alias 'Envelope' and priority 'critical'.`
-    
-
-### 3. Running Integration Tests
-
-To test resilience and network retry logic (requires a local mock server):
-
-Bash
-
-```
-python3 tests/test_resilience_real.py
-
-```
-
-----------
 
 ## 📄 License
 
