@@ -1,245 +1,348 @@
-# Amorce Python SDK (AATP)
+# Amorce Python SDK
 
-**Official Python SDK for the Amorce Agent Transaction Protocol (AATP).**
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)
 
-The Amorce SDK allows any Python application, API, or Agent to become a verified node in the **Agent Economy**. It provides the cryptographic primitives (Ed25519) and the transport layer required to transact securely with AI Agents (OpenAI, Google Gemini, Apple Intelligence).
+**The Standard for Secure AI Agent Transactions**
 
-## 🚀 Features
+Protect your AI Agent's API with cryptographic verification. The Amorce SDK handles Ed25519 signatures, zero-trust identity, and transaction validation—so you can focus on building.
 
--   **Zero-Trust Security**: Every request is cryptographically signed (Ed25519) locally.
-    
--   **Agent Identity**: Manage your agent's identity and keys securely without complexity.
-    
--   **Priority Lane**: Mark critical messages (`high`, `critical`) to bypass network congestion.
-    
--   **HTTP/2 Support (v0.2.0)**: Optional `AsyncAmorceClient` with multiplexed connections for high-throughput agents.
-    
--   **Exponential Backoff (v0.2.0)**: Advanced retry logic with jitter using tenacity (handles 503, 429, 504).
+---
 
--   **Resilience**: Automatic retry logic for unstable networks with exponential backoff.
-    
--   **Developer Experience**: Simplified `IdentityManager` with auto-derived Agent IDs.
+## 🚀 Quick Start
 
--   **Robust Error Handling**: Specific exceptions (`AmorceNetworkError`, `AmorceAPIError`) for reliable production code.
-    
+### Installation
 
-## 📦 Installation
-
-### Prerequisites
-
--   **Python 3.10+**
-    
--   **OS**: Linux, macOS, or Windows.
-    
-    -   _Linux users:_ Ensure you have `build-essential` and `libssl-dev` installed for the cryptography dependency.
-        
-
-### Install via PyPI
-
-```
+```bash
 pip install amorce-sdk
-
 ```
 
-## ⚡ Quick Start
+### Identity Setup
 
-### 1. Identity Setup
+Every AI Agent needs an identity (Ed25519 keypair):
 
-An Agent is defined by its **Private Key**. Never share this key.
-
-#### Option A: Quick Start (Ephemeral / Testing)
-
-Generate a new identity in memory instantly. Perfect for QA scripts or temporary bots.
-
-```
+```python
 from amorce import IdentityManager
 
-# Generates a fresh Ed25519 keypair in memory (Ephemeral)
+# Generate a new identity (ephemeral for dev/testing)
 identity = IdentityManager.generate_ephemeral()
 
-# The Agent ID is automatically derived from the Public Key (SHA-256)
 print(f"Agent ID: {identity.agent_id}")
-print(f"Public Key: {identity.public_key_pem}")
-
+print(f"Public Key:\\n{identity.public_key_pem}")
 ```
 
-#### Option B: Production (Secure Storage)
-
-Load your identity from a secure source or environment variable.
-
-```
-import os
-from amorce import IdentityManager, LocalFileProvider
-
-# Load from a local PEM file
-identity = IdentityManager(LocalFileProvider("agent_key.pem"))
-
-# OR (Recommended) Load private key content from Environment Variable
-# identity = IdentityManager.from_env("AMORCE_PRIVATE_KEY")
-
-```
-
-### 2. Sending a Transaction (Full Example)
-
-Use the `AmorceClient` to discover services and execute transactions.
-
-```
-import os
-from amorce import AmorceClient, PriorityLevel
-
-# Configuration (Use Env Vars in Prod!)
-DIRECTORY_URL = os.getenv("AMORCE_DIRECTORY_URL", "[https://directory.amorce.io](https://directory.amorce.io)")
-ORCHESTRATOR_URL = os.getenv("AMORCE_ORCHESTRATOR_URL", "[https://api.amorce.io](https://api.amorce.io)")
-
-# 1. Initialize the client
-# Note: 'agent_id' is automatically derived from the identity object.
-client = AmorceClient(
-    identity=identity,
-    directory_url=DIRECTORY_URL,
-    orchestrator_url=ORCHESTRATOR_URL
-)
-
-# 2. Define the payload (The "Letter" inside the Envelope)
-payload = {
-    "intent": "book_reservation",
-    "params": {"date": "2025-10-12", "guests": 2}
-}
-
-# 3. Execute with PRIORITY
-# Options: PriorityLevel.NORMAL, .HIGH, .CRITICAL
-print(f"Sending transaction from {identity.agent_id}...")
-
-try:
-    response = client.transact(
-        service_contract={"service_id": "srv_restaurant_01"},
-        payload=payload,
-        priority=PriorityLevel.HIGH 
-    )
-    
-    if response.get("status") == "success":
-        print(f"✅ Success! Tx ID: {response.get('transaction_id')}")
-        print(f"Data: {response.get('data')}")
-    else:
-        print(f"⚠️ Server Error: {response}")
-
-except AmorceNetworkError as e:
-    print(f"❌ Network Error (Retryable): {e}")
-except AmorceAPIError as e:
-    print(f"❌ API Error {e.status_code}: {e.response_body}")
-except Exception as e:
-    print(f"❌ Unexpected Error: {e}")
-
-```
-
-## ⚡ Async Quick Start (High-Throughput Agents)
-
-**NEW in v0.2.0:** For AI agents handling concurrent transactions, use `AsyncAmorceClient` with HTTP/2:
+**📝 For Production:** Save your identity securely
 
 ```python
-import asyncio
-from amorce import AsyncAmorceClient, IdentityManager, PriorityLevel
+# Save for reuse
+with open("my_agent_key.pem", "w") as f:
+    f.write(identity.private_key_pem)
 
-async def main():
-    identity = IdentityManager.generate_ephemeral()
-    
-    # Use as AsyncContextManager for proper resource cleanup
-    async with AsyncAmorceClient(
-        identity=identity,
-        directory_url="https://directory.amorce.io",
-        orchestrator_url="https://api.amorce.io"
-    ) as client:
-        payload = {
-            "intent": "book_reservation",
-            "params": {"date": "2025-12-15", "guests": 2}
-        }
-        
-        response = await client.transact(
-            service_contract={"service_id": "srv_restaurant_01"},
-            payload=payload,
-            priority=PriorityLevel.HIGH
+# Load next time
+from amorce import LocalFileProvider
+identity = IdentityManager(LocalFileProvider("my_agent_key.pem"))
+```
+
+---
+
+## 🛡️ For Builders: Protect Your API
+
+**Are you building an AI Agent?** Use the SDK to verify incoming requests on your server.
+
+### Why This Matters
+
+- ✅ **Cryptographic proof** of sender identity (Ed25519 signatures)
+- ✅ **Zero-trust by default** - every request is verified
+- ✅ **Intent whitelisting** - only allow specific actions  
+- ✅ **Automatic key revocation** - invalid agents rejected instantly
+- ✅ **No maintenance burden** - public keys auto-fetched from Trust Directory
+
+### How to Verify Requests
+
+```python
+from amorce import verify_request, AmorceSecurityError
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route('/api/v1/webhook', methods=['POST'])
+def handle_incoming():
+    try:
+        # ✅ AUTOMATIC VERIFICATION
+        # SDK fetches public key from Trust Directory and verifies signature
+        verified = verify_request(
+            headers=request.headers,
+            body=request.get_data(),
+            allowed_intents=['book_table', 'check_availability', 'cancel']
         )
         
-        if response.is_success:
-            print(f"✅ Transaction: {response.transaction_id}")
-            print(f"Data: {response.result.data}")
-
-asyncio.run(main())
+        print(f"✅ Verified request from: {verified.agent_id}")
+        print(f"Intent: {verified.payload['payload']['intent']}")
+        
+        # Your business logic here - 100% sure it's legitimate
+        if verified.payload['payload']['intent'] == 'book_table':
+            return {"status": "confirmed", "table": "A5", "time": "19:00"}
+        
+    except AmorceSecurityError as e:
+        # Invalid signature, unknown agent, or unauthorized intent
+        print(f"❌ Rejected: {e}")
+        return {"error": "Unauthorized"}, 401
 ```
 
-**Why Async?**
-- **HTTP/2 Multiplexing**: Handle 100s of concurrent transactions over a single connection
-- **Exponential Backoff**: Advanced retry logic with jitter prevents thundering herd
-- **Non-Blocking**: Perfect for AI agents that need to transact at high throughput
+**That's it!** Your API is now protected by cryptographic verification.
 
-### Migrating from Sync to Async
+### Advanced: Manual Public Key (Offline/Testing)
 
-| Sync Client (`AmorceClient`) | Async Client (`AsyncAmorceClient`) |
-|------------------------------|-------------------------------------|
-| `client = AmorceClient(...)` | `async with AsyncAmorceClient(...) as client:` |
-| `client.transact(...)` | `await client.transact(...)` |
-| HTTP/1.1 via `requests` | HTTP/2 via `httpx` |
-| Basic retry (urllib3) | Exponential backoff + jitter (tenacity) |
-| Blocking I/O | Non-blocking async I/O |
-
-```
-
-### 3. Error Handling
-
-The SDK provides specific exceptions for robust error handling:
+For testing or private networks, you can skip the Trust Directory lookup:
 
 ```python
-from amorce import AmorceClient, AmorceConfigError, AmorceNetworkError, AmorceAPIError
-
-try:
-    client.transact(...)
-except AmorceConfigError as e:
-    print(f"Configuration Error: {e}")
-except AmorceNetworkError as e:
-    print(f"Network Error: {e}") # Retry might be possible
-except AmorceAPIError as e:
-    print(f"API Error {e.status_code}: {e.response_body}")
-except Exception as e:
-    print(f"Unexpected Error: {e}")
+# Provide public key directly (no network call)
+verified = verify_request(
+    headers=request.headers,
+    body=request.get_data(),
+    public_key="-----BEGIN PUBLIC KEY-----\\n...\\n-----END PUBLIC KEY-----"
+)
 ```
 
-## 🛡️ Architecture & Security
+---
 
-The SDK implements the **AATP v0.1** standard strictly.
+## 📋 Register Your Agent (Optional)
 
-1.  **Envelope**: Data is wrapped in a `AmorceEnvelope`.
-    
-2.  **Canonicalization**: JSON payloads are serialized canonically (RFC 8785) to ensure signature consistency.
-    
-3.  **Signing**: The envelope is signed locally using Ed25519.
-    
-4.  **Transport**: The envelope is sent via HTTP/2 to the Orchestrator.
-    
-5.  **Verification**: The receiver verifies the signature against the Trust Directory before processing.
-    
+Want to list your service in the Amorce Network? Generate your manifest:
 
-## 🔧 Troubleshooting & FAQ
+```python
+identity = IdentityManager.generate_ephemeral()
 
-**Q: I get a `401 Unauthorized` when registering.** A: Ensure your signature logic is correct. If you use `IdentityManager`, the signature is handled automatically. If you are manually constructing payloads, verify you are signing the **canonical** JSON string encoded in UTF-8.
+# 🖨️  Generate manifest JSON
+manifest = identity.to_manifest_json(
+    name="My Restaurant Bot",
+    endpoint="https://my-api.example.com/api/v1/webhook",
+    capabilities=["book_table", "check_availability", "cancel_reservation"],
+    description="Fine dining reservations with real-time availability"
+)
 
-**Q: I get `SSL: CERTIFICATE_VERIFY_FAILED`.** A: This happens if you use a placeholder URL or a self-signed cert in dev. Ensure `ORCHESTRATOR_URL` points to a valid HTTPS endpoint with a trusted certificate.
+# Save it
+with open("agent-manifest.json", "w") as f:
+    f.write(manifest)
 
-**Q: How do I get my Agent ID?** A: Do not hardcode it. Access it via `identity.agent_id`. It is the SHA-256 hash of your public key.
+print("✅ Manifest created! Submit it to the Trust Directory to get listed.")
+```
+
+**What you get:**
+- 🌐 Discoverable by other agents in the network
+- 🔐 Your public key automatically distributed
+- 📊 Trust score based on transaction history
+
+---
+
+## 📤 Sending Transactions (For Clients/Testing)
+
+Need to call another agent? The SDK makes it simple:
+
+```python
+from amorce import AmorceClient, IdentityManager
+
+# Setup identity
+identity = IdentityManager.generate_ephemeral()
+
+# Initialize client (zero-config - uses production mainnet)
+client = AmorceClient(identity=identity)
+
+# Send a transaction
+response = client.transact(
+    service_contract={"service_id": "srv_restaurant_123"},
+    payload={
+        "intent": "book_table",
+        "params": {"date": "2025-12-01", "guests": 4, "time": "19:00"}
+    }
+)
+
+if response.get("status") == "success":
+    print(f"✅ Booking confirmed: {response['data']}")
+```
+
+### Custom Endpoints (Development/Testing)
+
+```python
+client = AmorceClient(
+    identity=identity,
+    directory_url="http://localhost:8080",
+    orchestrator_url="http://localhost:8081"
+)
+```
+
+---
+
+## ⚡ Async Support (NEW in v0.2.0)
+
+For high-performance applications:
+
+```python
+from amorce import AsyncAmorceClient
+
+async with AsyncAmorceClient(identity=identity) as client:
+    response = await client.transact(
+        service_contract={"service_id": "srv_restaurant_123"},
+        payload={"intent": "book_table", "params": {...}}
+    )
+```
+
+**Features:**
+- HTTP/2 multiplexing
+- Exponential backoff + jitter
+- Auto-generated idempotency keys
+- 3x faster for concurrent requests
+
+---
+
+## 🔒 Security Architecture
+
+```
+┌─────────────┐                  ┌──────────────────┐                  ┌─────────────┐
+│   Client    │                  │  Orchestrator    │                  │   Service   │
+│   Agent     │                  │  (Amorce)        │                  │   Provider  │
+└─────────────┘                  └──────────────────┘                  └─────────────┘
+       │                                  │                                    │
+       │ 1. Sign request                  │                                    │
+       │    (Ed25519)                     │                                    │
+       ├─────────────────────────────────>│                                    │
+       │                                  │ 2. Verify signature                │
+       │                                  │    (fetch public key from          │
+       │                                  │     Trust Directory)               │
+       │                                  ├───────────────────────────────────>│
+       │                                  │ 3. Forward verified request        │
+       │                                  │    (with sender identity)          │
+       │                                  │                                    │
+       │                                  │ 4. Service verifies again          │
+       │                                  │    (optional double-check)         │
+       │                                  │<───────────────────────────────────│
+       │<─────────────────────────────────│ 5. Return signed response          │
+       │                                  │                                    │
+```
+
+**Zero-Trust Principles:**
+1. Every request is signed by sender
+2. Every signature is verified before processing
+3. Public keys are immutable (tied to agent_id)
+4. Revoked agents are immediately rejected
+
+---
+
+## 📚 API Reference
+
+### `IdentityManager`
+
+**Factory Methods:**
+- `generate_ephemeral()` - Create new Ed25519 identity (in-memory)
+- `IdentityManager(provider)` - Load from file/env/secret manager
+
+**Properties:**
+- `agent_id` - SHA-256 hash of public key (deterministic)
+- `public_key_pem` - Public key in PEM format
+- `private_key_pem` - Private key in PEM format (⚠️ handle carefully)
+
+**Methods:**
+- `sign_data(bytes)` - Sign raw bytes, return base64 signature
+- `to_manifest_json(...)` - Generate agent manifest for registration
+- `verify_signature(public_key, data, signature)` - Static verification method
+
+### `verify_request()`
+
+**For Builders** - Verify incoming signed requests
+
+```python
+verify_request(
+    headers: Dict[str, str],
+    body: bytes,
+    allowed_intents: Optional[List[str]] = None,
+    public_key: Optional[str] = None,
+    directory_url: str = "https://directory.amorce.io"
+) -> VerifiedRequest
+```
+
+**Returns:** `VerifiedRequest` with `.agent_id`, `.payload`, `.signature`  
+**Raises:** `AmorceSecurityError` if verification fails
+
+### `AmorceClient`
+
+**Constructor:**
+```python
+AmorceClient(
+    identity: IdentityManager,
+    directory_url: str = "https://directory.amorce.io",    # Zero-config!
+    orchestrator_url: str = "https://orchestrator.amorce.io",
+    agent_id: Optional[str] = None,
+    api_key: Optional[str] = None
+)
+```
+
+**Methods:**
+- `discover(service_type)` - Find services in Trust Directory
+- `transact(service_contract, payload, priority)` - Execute transaction
+
+### Exceptions
+
+- `AmorceError` - Base exception
+- `AmorceConfigError` - Invalid configuration
+- `AmorceNetworkError` - Network/connection errors
+- `AmorceAPIError` - API errors (4xx, 5xx)
+- `AmorceSecurityError` - Signature/verification failures ⚠️
+- `AmorceValidationError` - Data validation errors
+
+---
 
 ## 🛠️ Development
 
-To contribute to the SDK:
-
-```
-# Clone and install in editable mode
-git clone [https://github.com/trebortGolin/amorce_py_sdk.git](https://github.com/trebortGolin/amorce_py_sdk.git)
+```bash
+# Clone and install
+git clone https://github.com/trebortGolin/amorce_py_sdk.git
 cd amorce_py_sdk
-pip install -e .
+pip install -e ".[dev]"
 
-# Run Unit Tests
-python3 -m unittest discover tests
+# Run tests
+pytest --cov=amorce
 
+# Type checking
+mypy amorce/
 ```
+
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+MIT License - See [LICENSE](LICENSE) for details
+
+---
+
+## 🔗 Related Projects
+
+- [amorce-js-sdk](https://github.com/trebortGolin/amorce-js-sdk) - JavaScript/TypeScript SDK
+- [amorce-trust-directory](https://github.com/trebortGolin/amorce-trust-directory) - Trust Directory service
+- [amorce-console](https://github.com/trebortGolin/amorce-console) - Management console
+
+---
+
+## 📝 Changelog
+
+### v0.2.1 (2025-11-30) 🆕
+* **[NEW - FOR BUILDERS]** `verify_request()` - Verify incoming signed requests
+* **[NEW]** `to_manifest_json()` - Generate agent manifest for registration
+* **[ENHANCEMENT]** Zero-config defaults (production mainnet URLs)
+* **[DOCS]** Restructured README for Builders-first messaging
+
+### v0.2.0 (2025-11-30)
+* **[FEATURE]** `AsyncAmorceClient` with HTTP/2 support
+* **[FEATURE]** Exponential backoff + jitter retry logic
+* **[FEATURE]** Auto-generated idempotency keys
+* **[FEATURE]** Structured `AmorceResponse` model
+* **[BREAKING]** Requires `httpx` and `tenacity` dependencies
+
+### v0.1.7
+* Initial stable release
+* Ed25519 signature support
+* Trust Directory integration
+* Sync `AmorceClient`
+
+---
+
+**Built with ❤️ for the Agent Economy**

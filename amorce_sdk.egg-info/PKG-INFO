@@ -1,28 +1,44 @@
 Metadata-Version: 2.4
 Name: amorce-sdk
-Version: 2.0.0
+Version: 0.2.0
 Summary: Official Python SDK for the Amorce Agent Transaction Protocol (AATP)
 Home-page: https://github.com/trebortGolin/amorce_py_sdk
 Author: Athena Architecture
 Author-email: dev@amorce.io
 Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
 Classifier: Intended Audience :: Developers
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Development Status :: 4 - Beta
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 Requires-Dist: requests>=2.31.0
+Requires-Dist: httpx>=0.25.0
+Requires-Dist: tenacity>=8.0.0
 Requires-Dist: cryptography>=41.0.0
 Requires-Dist: pydantic>=2.0.0
-Requires-Dist: google-cloud-secret-manager>=2.16.0
-Requires-Dist: firebase-admin>=6.2.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: respx>=0.20.0; extra == "dev"
+Requires-Dist: mypy>=1.5.0; extra == "dev"
+Provides-Extra: gcp
+Requires-Dist: google-cloud-secret-manager>=2.16.0; extra == "gcp"
+Requires-Dist: firebase-admin>=6.2.0; extra == "gcp"
 Dynamic: author
 Dynamic: author-email
 Dynamic: classifier
 Dynamic: description
 Dynamic: description-content-type
 Dynamic: home-page
+Dynamic: provides-extra
 Dynamic: requires-dist
 Dynamic: requires-python
 Dynamic: summary
@@ -41,9 +57,13 @@ The Amorce SDK allows any Python application, API, or Agent to become a verified
     
 -   **Priority Lane**: Mark critical messages (`high`, `critical`) to bypass network congestion.
     
--   **Resilience**: Automatic retry logic with exponential backoff for unstable networks (handles 503, 429).
+-   **HTTP/2 Support (v0.2.0)**: Optional `AsyncAmorceClient` with multiplexed connections for high-throughput agents.
     
--   **Developer Experience (v0.1.6)**: Simplified `IdentityManager` with auto-derived Agent IDs.
+-   **Exponential Backoff (v0.2.0)**: Advanced retry logic with jitter using tenacity (handles 503, 429, 504).
+
+-   **Resilience**: Automatic retry logic for unstable networks with exponential backoff.
+    
+-   **Developer Experience**: Simplified `IdentityManager` with auto-derived Agent IDs.
 
 -   **Robust Error Handling**: Specific exceptions (`AmorceNetworkError`, `AmorceAPIError`) for reliable production code.
     
@@ -153,6 +173,58 @@ except AmorceAPIError as e:
     print(f"❌ API Error {e.status_code}: {e.response_body}")
 except Exception as e:
     print(f"❌ Unexpected Error: {e}")
+
+```
+
+## ⚡ Async Quick Start (High-Throughput Agents)
+
+**NEW in v0.2.0:** For AI agents handling concurrent transactions, use `AsyncAmorceClient` with HTTP/2:
+
+```python
+import asyncio
+from amorce import AsyncAmorceClient, IdentityManager, PriorityLevel
+
+async def main():
+    identity = IdentityManager.generate_ephemeral()
+    
+    # Use as AsyncContextManager for proper resource cleanup
+    async with AsyncAmorceClient(
+        identity=identity,
+        directory_url="https://directory.amorce.io",
+        orchestrator_url="https://api.amorce.io"
+    ) as client:
+        payload = {
+            "intent": "book_reservation",
+            "params": {"date": "2025-12-15", "guests": 2}
+        }
+        
+        response = await client.transact(
+            service_contract={"service_id": "srv_restaurant_01"},
+            payload=payload,
+            priority=PriorityLevel.HIGH
+        )
+        
+        if response.is_success:
+            print(f"✅ Transaction: {response.transaction_id}")
+            print(f"Data: {response.result.data}")
+
+asyncio.run(main())
+```
+
+**Why Async?**
+- **HTTP/2 Multiplexing**: Handle 100s of concurrent transactions over a single connection
+- **Exponential Backoff**: Advanced retry logic with jitter prevents thundering herd
+- **Non-Blocking**: Perfect for AI agents that need to transact at high throughput
+
+### Migrating from Sync to Async
+
+| Sync Client (`AmorceClient`) | Async Client (`AsyncAmorceClient`) |
+|------------------------------|-------------------------------------|
+| `client = AmorceClient(...)` | `async with AsyncAmorceClient(...) as client:` |
+| `client.transact(...)` | `await client.transact(...)` |
+| HTTP/1.1 via `requests` | HTTP/2 via `httpx` |
+| Basic retry (urllib3) | Exponential backoff + jitter (tenacity) |
+| Blocking I/O | Non-blocking async I/O |
 
 ```
 

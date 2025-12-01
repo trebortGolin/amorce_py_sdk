@@ -1,45 +1,75 @@
-# Amorce SDK Core
-# Version 0.2.0
+"""
+Amorce Python SDK - The Standard for Secure AI Agent Transactions
+"""
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
-# Task 1: Crypto & Identity
-from .crypto import IdentityManager, LocalFileProvider, EnvVarProvider, GoogleSecretManagerProvider
-
-# Task 2: Protocol Envelope
-# DX FIX: Aliasing AmorceEnvelope to Envelope for simpler imports
-from .envelope import AmorceEnvelope, AmorceEnvelope as Envelope, PriorityLevel
-
-# Task 3: Client
+# Core clients
 from .client import AmorceClient
 from .core.async_client import AsyncAmorceClient
 
-# Task 4: Exceptions
+# Identity management
+from .crypto import (
+    IdentityManager,
+    LocalFileProvider,
+    EnvVarProvider,
+    GoogleSecretManagerProvider,
+)
+
+# Request verification (for Builders)
+from .verification import verify_request, VerifiedRequest
+
+# Protocol primitives
+from .envelope import (
+    AmorceEnvelope,
+    SenderInfo,
+    SettlementInfo,
+    PriorityLevel,
+)
+
+# Models
+from .models import AmorceConfig, AmorceResponse, TransactionResult
+
+# Exceptions
 from .exceptions import (
     AmorceError,
     AmorceConfigError,
     AmorceNetworkError,
     AmorceAPIError,
     AmorceSecurityError,
-    AmorceValidationError
+    AmorceValidationError,
 )
 
-# Flattening exports as requested by QA Ticket
 __all__ = [
+    # Version
+    "__version__",
+    # Clients
     "AmorceClient",
     "AsyncAmorceClient",
-    "AmorceEnvelope",
-    "Envelope",
-    "PriorityLevel",
+    # Identity
     "IdentityManager",
     "LocalFileProvider",
     "EnvVarProvider",
-    "EnvVarProvider",
     "GoogleSecretManagerProvider",
+    # Verification (NEW - for Builders)
+    "verify_request",
+    "VerifiedRequest",
+    # Protocol
+    "AmorceEnvelope",
+    "SenderInfo",
+    "SettlementInfo",
+    "PriorityLevel",
+    # Models
+    "AmorceConfig",
+    "AmorceResponse",
+    "TransactionResult",
+    # Exceptions
     "AmorceError",
     "AmorceConfigError",
     "AmorceNetworkError",
     "AmorceAPIError",
     "AmorceSecurityError",
-    "AmorceValidationError"
+    "AmorceValidationError",
 ]
+
+print(f"Amorce SDK v{__version__} loaded.")

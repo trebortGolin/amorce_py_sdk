@@ -9,7 +9,7 @@ import json
 import logging
 import hashlib  # Required for MCP 1.0 (Agent ID Derivation)
 from abc import ABC, abstractmethod
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
@@ -208,3 +208,52 @@ class IdentityManager:
             sort_keys=True,
             separators=(',', ':')
         ).encode("utf-8")
+    
+    def to_manifest_json(
+        self,
+        name: str,
+        endpoint: str,
+        capabilities: Optional[List[str]] = None,
+        description: str = ""
+    ) -> str:
+        """
+        Generate an agent manifest for Trust Directory registration.
+        
+        Perfect for Builders who want to list their service in the network.
+        
+        Args:
+            name: Human-readable agent name (e.g., "Le Petit Bistro")
+            endpoint: Your API webhook URL (e.g., "https://my-api.com/webhook")
+            capabilities: List of intents your agent supports (e.g., ["book_table", "cancel"])
+            description: Optional description of your service
+        
+        Returns:
+            JSON string ready to save as agent-manifest.json
+        
+        Example:
+            identity = IdentityManager.generate_ephemeral()
+            
+            manifest = identity.to_manifest_json(
+                name="My Restaurant Bot",
+                endpoint="https://my-api.herokuapp.com/amorce",
+                capabilities=["book_table", "check_availability", "cancel_reservation"],
+                description="Fine dining reservations"
+            )
+            
+            print(manifest)  # Copy-paste into agent-manifest.json
+            
+            # Or save directly:
+            with open("agent-manifest.json", "w") as f:
+                f.write(manifest)
+        """
+        manifest = {
+            "name": name,
+            "agent_id": self.agent_id,
+            "public_key": self.public_key_pem,
+            "endpoint": endpoint,
+            "capabilities": capabilities or [],
+            "description": description,
+            "version": "1.0.0",
+            "protocol": "aatp"
+        }
+        return json.dumps(manifest, indent=2)

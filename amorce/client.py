@@ -18,6 +18,10 @@ from .exceptions import AmorceConfigError, AmorceNetworkError, AmorceAPIError
 
 logger = logging.getLogger("nexus.client")
 
+# Production Mainnet Defaults (Zero-Config)
+DEFAULT_DIRECTORY_URL = "https://directory.amorce.io"
+DEFAULT_ORCHESTRATOR_URL = "https://orchestrator.amorce.io"
+
 
 class AmorceClient:
     """
@@ -28,12 +32,32 @@ class AmorceClient:
     def __init__(
             self,
             identity: IdentityManager,
-            directory_url: str,
-            orchestrator_url: str,
-            # FIX: On réintroduit agent_id pour forcer l'utilisation d'un UUID (requis par le Serveur)
+            directory_url: str = DEFAULT_DIRECTORY_URL,
+            orchestrator_url: str = DEFAULT_ORCHESTRATOR_URL,
             agent_id: Optional[str] = None,
             api_key: Optional[str] = None
     ):
+        """
+        Initialize Amorce Client.
+        
+        Args:
+            identity: IdentityManager instance for signing
+            directory_url: Trust Directory URL (defaults to production mainnet)
+            orchestrator_url: Orchestrator URL (defaults to production mainnet)
+            agent_id: Optional override for agent ID
+            api_key: Optional API key for L1 authentication
+        
+        Example:
+            # Zero-config (uses production mainnet)
+            client = AmorceClient(identity=identity)
+            
+            # Custom endpoints
+            client = AmorceClient(
+                identity=identity,
+                directory_url="https://custom-dir.example.com",
+                orchestrator_url="https://custom-orch.example.com"
+            )
+        """
         self.identity = identity
         
         if not directory_url.startswith(("http://", "https://")):
