@@ -195,6 +195,150 @@ async with AsyncAmorceClient(identity=identity) as client:
 
 ---
 
+## 🤝 Human-in-the-Loop (HITL) Support
+
+Enable human oversight for critical agent decisions with built-in approval workflows.
+
+### When to Use HITL
+
+- **High-value transactions** - Booking reservations, making purchases
+- **Data sharing** - Before sending personal information to third parties
+- **Irreversible actions** - Cancellations, deletions, confirmations
+- **Regulatory compliance** - Finance, healthcare, legal industries
+
+### Basic HITL Workflow
+
+```python
+from amorce import AmorceClient, IdentityManager
+
+identity = IdentityManager.generate_ephemeral()
+client = AmorceClient(identity=identity)
+
+# 1. Agent negotiates with service
+response = client.transact(
+    service_contract={"service_id": "srv_restaurant_123"},
+    payload={"intent": "book_table", "guests": 4, "date": "2025-12-05"}
+)
+
+# 2. Request human approval before finalizing
+approval_id = client.request_approval(
+    transaction_id=response['transaction_id'],
+    summary=f"Book table for 4 guests at {response['restaurant']['name']}",
+    details=response['result'],
+    timeout_seconds=300  # 5 minute timeout
+)
+
+print(f"Awaiting approval: {approval_id}")
+
+# 3. Human reviews and approves (via SMS, email, app, etc.)
+# ... your notification logic here ...
+
+# 4. Check approval status
+status = client.check_approval(approval_id)
+if status['status'] == 'approved':
+    # 5. Finalize the transaction
+    final_response = client.transact(
+        service_contract={"service_id": "srv_restaurant_123"},
+        payload={"intent": "confirm_booking", "booking_id": response['booking_id']}
+    )
+    print("✅ Booking confirmed!")
+```
+
+### Submitting Approval Decisions
+
+Your application collects human input and submits the decision:
+
+```python
+# Human approved via your UI/SMS/voice interface
+client.submit_approval(
+    approval_id=approval_id,
+    decision="approve",  # or "reject"
+    approved_by="user@example.com",
+    comments="Looks good for the business lunch"
+)
+```
+
+### LLM-Interpreted Approvals
+
+Use AI to interpret natural language responses:
+
+```python
+import google.generativeai as genai
+
+# Human responds: "yes sounds perfect"
+human_response = "yes sounds perfect"
+
+# LLM interprets the intent
+interpretation = genai.GenerativeModel('gemini-pro').generate_content(
+    f'Is this approving or rejecting? "{human_response}" Answer: APPROVE or REJECT'
+).text
+
+decision = "approve" if "APPROVE" in interpretation.upper() else "reject"
+
+client.submit_approval(
+    approval_id=approval_id,
+    decision=decision,
+    approved_by="user@example.com",
+    comments=f"Original response: {human_response}"
+)
+```
+
+### Channel-Agnostic Notifications
+
+HITL is **protocol-level** - you choose how to notify humans:
+
+- **SMS** (Twilio): "Sarah wants to book Le Petit Bistro for 4. Reply YES/NO"
+- **Email**: Send approval link with one-click approve/reject
+- **Voice** (Vapi.ai): "Your assistant needs approval. Say approve or decline"
+- **Push notification**: Mobile app notification
+- **Slack/Teams**: Bot message with buttons
+
+**Example with Twilio:**
+```python
+from twilio.rest import Client
+
+# Create approval
+approval_id = client.request_approval(...)
+
+# Send SMS
+twilio = Client(account_sid, auth_token)
+twilio.messages.create(
+    to="+1234567890",
+    from_="+0987654321",
+    body=f"Sarah needs approval: Book table for 4 at Le Petit Bistro tomorrow 7pm. Reply YES or NO"
+)
+
+# Poll for response or use webhook
+# When you receive "YES", submit approval
+client.submit_approval(approval_id, decision="approve", approved_by="sms:+1234567890")
+```
+
+### Advanced: Approval Timeouts
+
+Approvals automatically expire after the timeout period:
+
+```python
+approval_id = client.request_approval(
+    transaction_id=tx_id,
+    summary="High-value purchase: $5,000",
+    timeout_seconds=600  # 10 minutes
+)
+
+# Later...
+status = client.check_approval(approval_id)
+if status['status'] == 'expired':
+    print("⏱️ Approval request timed out - transaction cancelled")
+```
+
+### Best Practices
+
+1. **Clear summaries** - Make approval requests easy to understand
+2. **Appropriate timeouts** - Balance urgency vs. convenience
+3. **Audit trail** - All approvals are logged with timestamps and user IDs
+4. **Fallback handling** - Handle expired/rejected approvals gracefully
+5. **Security** - Verify human identity before submitting approvals
+
+
 ## 🔒 Security Architecture
 
 ```
@@ -279,6 +423,9 @@ AmorceClient(
 **Methods:**
 - `discover(service_type)` - Find services in Trust Directory
 - `transact(service_contract, payload, priority)` - Execute transaction
+- `request_approval(transaction_id, summary, details, timeout_seconds)` - Create HITL approval request
+- `check_approval(approval_id)` - Get approval status
+- `submit_approval(approval_id, decision, approved_by, comments)` - Submit approval decision
 
 ### Exceptions
 
@@ -346,3 +493,28 @@ MIT License - See [LICENSE](LICENSE) for details
 ---
 
 **Built with ❤️ for the Agent Economy**
+---
+
+## 🔌 MCP Integration (NEW)
+
+**Access 80+ Model Context Protocol servers through Amorce with cryptographic security + HITL**
+
+```python
+from amorce import IdentityManager, MCPToolClient
+
+# Initialize
+identity = IdentityManager.generate_ephemeral()
+mcp = MCPToolClient(identity, orchestrator_url="http://localhost:8080")
+
+# Call MCP tools
+result = mcp.call_tool(
+    server_name='filesystem',
+    tool_name='read_file',
+    arguments={'path': '/tmp/data.txt'}
+)
+```
+
+**Available servers:** filesystem, brave-search, postgres, and 80+ more
+
+**Learn more:** [MCP Wrapper Docs](https://github.com/trebortGolin/amorce/blob/main/docs/MCP_WRAPPER.md)
+

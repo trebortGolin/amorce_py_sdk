@@ -5,7 +5,9 @@ amorce/client.py
 amorce/crypto.py
 amorce/envelope.py
 amorce/exceptions.py
+amorce/mcp_helpers.py
 amorce/models.py
+amorce/verification.py
 amorce/core/__init__.py
 amorce/core/async_client.py
 amorce_sdk.egg-info/PKG-INFO

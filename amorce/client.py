@@ -191,3 +191,182 @@ class AmorceClient:
         except Exception as e:
             logger.error(f"Transaction failed after retries: {e}")
             raise AmorceNetworkError(f"Transaction failed: {e}")
+    
+    # --- HITL Approval Methods ---
+    
+    def request_approval(
+        self,
+        transaction_id: str,
+        summary: str,
+        details: Optional[Dict[str, Any]] = None,
+        alternatives: Optional[List[Dict[str, Any]]] = None,
+        timeout_seconds: int = 3600
+    ) -> str:
+        """
+        Request human approval for a transaction (HITL).
+        
+        Args:
+            transaction_id: The transaction requiring approval
+            summary: Human-readable summary (e.g., "Book table for 4 at 7pm")
+            details: Optional detailed information
+            alternatives: Optional list of alternative options
+            timeout_seconds: How long approval is valid (default: 1 hour)
+        
+        Returns:
+            approval_id: Unique identifier for this approval request
+        
+        Example:
+            approval_id = client.request_approval(
+                transaction_id="tx_abc123",
+                summary="Book table for 4 at Le Petit Bistro, 7pm",
+                details={"restaurant": "Le Petit Bistro", "guests": 4, "time": "19:00"}
+            )
+        """
+        url = f"{self.orchestrator_url}/v1/approvals/create"
+        
+        body = {
+            "transaction_id": transaction_id,
+            "summary": summary,
+            "details": details or {},
+            "alternatives": alternatives,
+            "timeout_seconds": timeout_seconds
+        }
+        
+        headers = {
+            "X-Agent-ID": self.agent_id,
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            resp = self.session.post(url, json=body, headers=headers, timeout=10)
+            
+            if resp.status_code != 201:
+                raise AmorceAPIError(
+                    f"Failed to create approval: {resp.text}",
+                    status_code=resp.status_code,
+                    response_body=resp.text
+                )
+            
+            result = resp.json()
+            return result["approval_id"]
+            
+        except requests.exceptions.RequestException as e:
+            raise AmorceNetworkError(f"Approval request failed: {e}")
+    
+    def submit_approval(
+        self,
+        approval_id: str,
+        decision: str,
+        approved_by: str,
+        selected_alternative: Optional[int] = None,
+        comments: Optional[str] = None
+    ) -> bool:
+        """
+        Submit approval decision after getting human response.
+        
+        Args:
+            approval_id: The approval identifier
+            decision: "approve" or "reject"
+            approved_by: Human identifier (email, phone, etc.)
+            selected_alternative: Index of selected option (if alternatives provided)
+            comments: Optional human comments
+        
+        Returns:
+            True if submission successful
+        
+        Example:
+            # After getting human response via SMS/voice/chat
+            human_response = "yes, book it"
+            
+            # Use LLM to interpret
+            decision = "approve" if interpret_response(human_response) else "reject"
+            
+            # Submit decision
+            client.submit_approval(
+                approval_id=approval_id,
+                decision=decision,
+                approved_by="user@example.com"
+            )
+        """
+        if decision not in ["approve", "reject"]:
+            raise ValueError("Decision must be 'approve' or 'reject'")
+        
+        url = f"{self.orchestrator_url}/v1/approvals/{approval_id}/submit"
+        
+        body = {
+            "decision": decision,
+            "approved_by": approved_by,
+            "selected_alternative": selected_alternative,
+            "comments": comments
+        }
+        
+        headers = {
+            "X-Agent-ID": self.agent_id,
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            resp = self.session.post(url, json=body, headers=headers, timeout=10)
+            
+            if resp.status_code != 200:
+                raise AmorceAPIError(
+                    f"Failed to submit approval: {resp.text}",
+                    status_code=resp.status_code,
+                    response_body=resp.text
+                )
+            
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            raise AmorceNetworkError(f"Approval submission failed: {e}")
+    
+    def check_approval(self, approval_id: str) -> Dict[str, Any]:
+        """
+        Check approval status (for polling).
+        
+        Args:
+            approval_id: The approval identifier
+        
+        Returns:
+            Approval status dictionary with:
+            - status: "pending", "approved", "rejected", or "expired"
+            - approved_by: Who approved (if approved)
+            - approved_at: When approved (if approved)
+            - selected_alternative: Which option selected (if applicable)
+            - comments: Human comments (if any)
+        
+        Example:
+            # Poll for approval
+            import time
+            
+            while True:
+                approval = client.check_approval(approval_id)
+                
+                if approval["status"] != "pending":
+                    break
+                
+                time.sleep(5)  # Poll every 5 seconds
+            
+            if approval["status"] == "approved":
+                print("Human approved!")
+        """
+        url = f"{self.orchestrator_url}/v1/approvals/{approval_id}"
+        
+        headers = {
+            "X-Agent-ID": self.agent_id
+        }
+        
+        try:
+            resp = self.session.get(url, headers=headers, timeout=10)
+            
+            if resp.status_code != 200:
+                raise AmorceAPIError(
+                    f"Failed to check approval: {resp.text}",
+                    status_code=resp.status_code,
+                    response_body=resp.text
+                )
+            
+            return resp.json()
+            
+        except requests.exceptions.RequestException as e:
+            raise AmorceNetworkError(f"Approval check failed: {e}")

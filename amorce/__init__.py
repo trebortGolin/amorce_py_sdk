@@ -40,6 +40,9 @@ from .exceptions import (
     AmorceValidationError,
 )
 
+# MCP Integration (NEW)
+from .mcp_helpers import MCPToolClient
+
 __all__ = [
     # Version
     "__version__",
@@ -70,6 +73,8 @@ __all__ = [
     "AmorceAPIError",
     "AmorceSecurityError",
     "AmorceValidationError",
+    # MCP Integration (NEW)
+    "MCPToolClient",
 ]
 
 print(f"Amorce SDK v{__version__} loaded.")
