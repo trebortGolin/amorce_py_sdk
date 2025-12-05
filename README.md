@@ -41,8 +41,30 @@ with open("my_agent_key.pem", "w") as f:
 from amorce import LocalFileProvider
 identity = IdentityManager(LocalFileProvider("my_agent_key.pem"))
 ```
+## 🔌 MCP Integration (NEW)
 
+**Access 80+ Model Context Protocol servers through Amorce with cryptographic security + HITL**
+
+```python
+from amorce import IdentityManager, MCPToolClient
+
+# Initialize
+identity = IdentityManager.generate_ephemeral()
+mcp = MCPToolClient(identity, orchestrator_url="http://localhost:8080")
+
+# Call MCP tools
+result = mcp.call_tool(
+    server_name='filesystem',
+    tool_name='read_file',
+    arguments={'path': '/tmp/data.txt'}
+)
 ---
+
+```
+
+**Available servers:** filesystem, brave-search, postgres, and 80+ more
+
+**Learn more:** [MCP Wrapper Docs](https://github.com/trebortGolin/amorce/blob/main/docs/MCP_WRAPPER.md)
 
 ## 🛡️ For Builders: Protect Your API
 
@@ -494,26 +516,4 @@ MIT License - See [LICENSE](LICENSE) for details
 **Built with ❤️ for the Agent Economy**
 ---
 
-## 🔌 MCP Integration (NEW)
-
-**Access 80+ Model Context Protocol servers through Amorce with cryptographic security + HITL**
-
-```python
-from amorce import IdentityManager, MCPToolClient
-
-# Initialize
-identity = IdentityManager.generate_ephemeral()
-mcp = MCPToolClient(identity, orchestrator_url="http://localhost:8080")
-
-# Call MCP tools
-result = mcp.call_tool(
-    server_name='filesystem',
-    tool_name='read_file',
-    arguments={'path': '/tmp/data.txt'}
-)
-```
-
-**Available servers:** filesystem, brave-search, postgres, and 80+ more
-
-**Learn more:** [MCP Wrapper Docs](https://github.com/trebortGolin/amorce/blob/main/docs/MCP_WRAPPER.md)
 
