@@ -2,7 +2,7 @@
 Amorce Python SDK - The Standard for Secure AI Agent Transactions
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 # Core clients
 from .client import AmorceClient
@@ -40,8 +40,18 @@ from .exceptions import (
     AmorceValidationError,
 )
 
-# MCP Integration (NEW)
+# MCP Integration
 from .mcp_helpers import MCPToolClient
+
+# A2A Well-Known Manifest (NEW)
+from .well_known import (
+    serve_well_known,
+    serve_well_known_fastapi,
+    serve_well_known_flask,
+    fetch_manifest,
+    fetch_manifest_sync,
+    generate_manifest_file,
+)
 
 __all__ = [
     # Version
@@ -54,7 +64,7 @@ __all__ = [
     "LocalFileProvider",
     "EnvVarProvider",
     "GoogleSecretManagerProvider",
-    # Verification (NEW - for Builders)
+    # Verification (for Builders)
     "verify_request",
     "VerifiedRequest",
     # Protocol
@@ -73,8 +83,15 @@ __all__ = [
     "AmorceAPIError",
     "AmorceSecurityError",
     "AmorceValidationError",
-    # MCP Integration (NEW)
+    # MCP Integration
     "MCPToolClient",
+    # A2A Well-Known (NEW)
+    "serve_well_known",
+    "serve_well_known_fastapi",
+    "serve_well_known_flask",
+    "fetch_manifest",
+    "fetch_manifest_sync",
+    "generate_manifest_file",
 ]
 
 print(f"Amorce SDK v{__version__} loaded.")

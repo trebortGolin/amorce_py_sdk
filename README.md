@@ -1,9 +1,14 @@
 # Amorce Python SDK
 
+[![PyPI](https://img.shields.io/pypi/v/amorce-sdk)](https://pypi.org/project/amorce-sdk/)
+[![GitHub](https://img.shields.io/github/stars/trebortGolin/amorce_py_sdk?style=social)](https://github.com/trebortGolin/amorce_py_sdk)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)
+[![Demo](https://img.shields.io/badge/demo-marketplace-success.svg)](https://github.com/trebortGolin/agent-marketplace-demo)
 
 **The Standard for Secure AI Agent Transactions**
+
+**See it in action**: [Agent Marketplace Demo](https://github.com/trebortGolin/agent-marketplace-demo) - Watch AI agents negotiate with cryptographic security
 
 Protect your AI Agent's API with cryptographic verification. The Amorce SDK handles Ed25519 signatures, zero-trust identity, and transaction validation—so you can focus on building.
 
