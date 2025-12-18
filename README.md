@@ -1,16 +1,16 @@
 # Amorce Python SDK
 
 [![PyPI](https://img.shields.io/pypi/v/amorce-sdk)](https://pypi.org/project/amorce-sdk/)
-[![GitHub](https://img.shields.io/github/stars/trebortGolin/amorce_py_sdk?style=social)](https://github.com/trebortGolin/amorce_py_sdk)
+[![GitHub](https://img.shields.io/github/stars/AmorceAATP/amorce_py_sdk?style=social)](https://github.com/AmorceAATP/amorce_py_sdk)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)
-[![Demo](https://img.shields.io/badge/demo-marketplace-success.svg)](https://github.com/trebortGolin/agent-marketplace-demo)
+[![Demo](https://img.shields.io/badge/demo-marketplace-success.svg)](https://github.com/AmorceAATP/agent-marketplace-demo)
 
 **Connect your Python agent to LangChain, CrewAI, n8n, and major LLMs — in 5 minutes.**
 
 The Amorce SDK enables cross-framework agent communication. Make your agent discoverable and callable by any framework or LLM without custom API integrations.
 
-**See it in action**: [Agent Marketplace Demo](https://github.com/trebortGolin/agent-marketplace-demo) - Watch AI agents negotiate with cryptographic security
+**See it in action**: [Agent Marketplace Demo](https://github.com/AmorceAATP/agent-marketplace-demo) - Watch AI agents negotiate with cryptographic security
 
 ---
 
@@ -447,7 +447,7 @@ AmorceClient(
 
 ```bash
 # Clone and install
-git clone https://github.com/trebortGolin/amorce_py_sdk.git
+git clone https://github.com/AmorceAATP/amorce_py_sdk.git
 cd amorce_py_sdk
 pip install -e ".[dev]"
 
@@ -468,9 +468,9 @@ MIT License - See [LICENSE](LICENSE) for details
 
 ## 🔗 Related Projects
 
-- [amorce-js-sdk](https://github.com/trebortGolin/amorce-js-sdk) - JavaScript/TypeScript SDK
-- [amorce-trust-directory](https://github.com/trebortGolin/amorce-trust-directory) - Trust Directory service
-- [amorce-console](https://github.com/trebortGolin/amorce-console) - Management console
+- [amorce-js-sdk](https://github.com/AmorceAATP/amorce-js-sdk) - JavaScript/TypeScript SDK
+- [amorce-trust-directory](https://github.com/AmorceAATP/amorce-trust-directory) - Trust Directory service
+- [amorce-console](https://github.com/AmorceAATP/amorce-console) - Management console
 
 ---
 
@@ -701,8 +701,8 @@ mcp.call_tool('git', 'commit', {'message': 'Update config'}, approval_id)
 
 ### 📚 Additional Resources
 
-- **[MCP Wrapper Docs](https://github.com/trebortGolin/amorce/blob/main/docs/MCP_WRAPPER.md)** - Complete integration guide
+- **[MCP Wrapper Docs](https://github.com/AmorceAATP/amorce/blob/main/docs/MCP_WRAPPER.md)** - Complete integration guide
 - **[Console Integration](https://amorce.io/docs/guides/mcp-integration)** - UI for approval management
-- **[Test Results](https://github.com/trebortGolin/amorce/blob/main/tests/TEST_RESULTS.md)** - Production readiness evidence
+- **[Test Results](https://github.com/AmorceAATP/amorce/blob/main/tests/TEST_RESULTS.md)** - Production readiness evidence
 
 ---
