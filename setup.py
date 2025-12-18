@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text() if (this_directory
 
 setup(
     name="amorce-sdk",
-    version="0.2.1",  # MCP + HITL + verify_request + to_manifest_json
+    version="0.2.2",  # MCP + HITL + verify_request + to_manifest_json
     description="Official Python SDK for the Amorce Agent Transaction Protocol (AATP)",
     long_description=long_description,
     long_description_content_type='text/markdown',

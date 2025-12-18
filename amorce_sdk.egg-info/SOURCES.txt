@@ -8,6 +8,7 @@ amorce/exceptions.py
 amorce/mcp_helpers.py
 amorce/models.py
 amorce/verification.py
+amorce/well_known.py
 amorce/core/__init__.py
 amorce/core/async_client.py
 amorce_sdk.egg-info/PKG-INFO
@@ -20,3 +21,4 @@ tests/test_errors.py
 tests/test_priority_lane.py
 tests/test_resilience_real.py
 tests/test_smoke.py
+tests/test_well_known.py

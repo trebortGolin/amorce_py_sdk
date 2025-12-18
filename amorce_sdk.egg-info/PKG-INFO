@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: amorce-sdk
-Version: 0.2.1
+Version: 0.2.2
 Summary: Official Python SDK for the Amorce Agent Transaction Protocol (AATP)
 Home-page: https://github.com/trebortGolin/amorce_py_sdk
 Author: Athena Architecture
@@ -45,10 +45,15 @@ Dynamic: summary
 
 # Amorce Python SDK
 
+[![PyPI](https://img.shields.io/pypi/v/amorce-sdk)](https://pypi.org/project/amorce-sdk/)
+[![GitHub](https://img.shields.io/github/stars/trebortGolin/amorce_py_sdk?style=social)](https://github.com/trebortGolin/amorce_py_sdk)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)
+[![Demo](https://img.shields.io/badge/demo-marketplace-success.svg)](https://github.com/trebortGolin/agent-marketplace-demo)
 
 **The Standard for Secure AI Agent Transactions**
+
+**See it in action**: [Agent Marketplace Demo](https://github.com/trebortGolin/agent-marketplace-demo) - Watch AI agents negotiate with cryptographic security
 
 Protect your AI Agent's API with cryptographic verification. The Amorce SDK handles Ed25519 signatures, zero-trust identity, and transaction validation—so you can focus on building.
 
@@ -516,7 +521,12 @@ MIT License - See [LICENSE](LICENSE) for details
 
 ## 📝 Changelog
 
-### v0.2.1 (2025-11-30) 🆕
+### v0.2.2 (2025-12-15) 🆕
+* **[NEW]** `serve_well_known()` - Auto-serve A2A manifest for agent discoverability
+* **[NEW]** `fetch_manifest()` - Fetch A2A manifest from Amorce Directory
+* **[NEW]** `generate_manifest_file()` - Generate static manifest file for deployment
+
+### v0.2.1 (2025-11-30)
 * **[NEW - FOR BUILDERS]** `verify_request()` - Verify incoming signed requests
 * **[NEW]** `to_manifest_json()` - Generate agent manifest for registration
 * **[ENHANCEMENT]** Zero-config defaults (production mainnet URLs)
@@ -534,6 +544,69 @@ MIT License - See [LICENSE](LICENSE) for details
 * Ed25519 signature support
 * Trust Directory integration
 * Sync `AmorceClient`
+
+---
+
+## 🌐 A2A Discovery: Make Your Agent Discoverable (NEW in v0.2.2)
+
+**Register your agent and instantly make it discoverable in the A2A ecosystem.**
+
+When you register your agent at [amorce.io/register](https://amorce.io/register), you can easily serve the required `/.well-known/agent.json` manifest using our SDK helpers.
+
+### Option 1: One-Liner Integration (Recommended)
+
+```python
+from amorce import serve_well_known
+from fastapi import FastAPI
+
+app = FastAPI()
+
+# Add /.well-known/agent.json route with one line!
+app = serve_well_known(app, agent_id="your-registered-agent-id")
+```
+
+Works with Flask too:
+```python
+from flask import Flask
+from amorce import serve_well_known
+
+app = Flask(__name__)
+app = serve_well_known(app, agent_id="your-agent-id", framework="flask")
+```
+
+### Option 2: Fetch Manifest Programmatically
+
+```python
+from amorce import fetch_manifest_sync
+
+# Get your manifest from Amorce Directory
+manifest = fetch_manifest_sync("your-agent-id")
+print(manifest)
+# {
+#   "name": "My Agent",
+#   "url": "https://my-agent.com",
+#   "protocol_version": "A2A/1.0",
+#   "authentication": { "type": "amorce", "public_key": "..." }
+# }
+```
+
+### Option 3: Generate Static File
+
+```python
+from amorce import generate_manifest_file
+
+# Generate .well-known/agent.json file for deployment
+generate_manifest_file("your-agent-id", ".well-known/agent.json")
+# ✅ Generated .well-known/agent.json
+# Host this file at: https://your-agent.com/.well-known/agent.json
+```
+
+### Why A2A Discovery Matters
+
+- 🔍 **Discoverable** - Other agents can find and verify your agent
+- 🔐 **Trusted** - Public key distributed via trusted directory
+- 🔗 **Interoperable** - Works with Google A2A, MCP, and Amorce protocols
+- ⚡ **Zero Maintenance** - Manifest auto-updated from your registration
 
 ---
 
